@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroBook - Professional Flight Booking Platform</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            min-height: 100vh;
+            color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .gradient-bg {
+            background: #ffffff;
+        }
+        
+        .glass-effect {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .flight-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .flight-card:hover {
+            border-color: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08);
+        }
+        
+        .btn-primary {
+            background: #1d4ed8;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        
+        .btn-primary:hover {
+            background: #1e40af;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e5e7eb;
+            font-weight: 600;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1d4ed8 !important;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+            color: #6b7280;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .nav-link:hover {
+            color: #1d4ed8;
+        }
+        
+        .nav-link.active {
+            color: #1d4ed8;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #1d4ed8;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a1a1a;
+        }
+        
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a1a1a;
+        }
+        
+        .text-muted {
+            color: #6b7280;
+        }
+        
+        .divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 24px 0;
+        }
+        
+        .status-badge {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+        
+        input, select, textarea {
+            font-family: inherit;
+        }
+        
+        .loading-spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #1d4ed8;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .price-tag {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Mock flight data
+        const generateFlights = (from, to, date) => {
+            const airlines = [
+                { name: 'SkyWings', logo: '✈️', rating: 4.5 },
+                { name: 'AeroElite', logo: '🛫', rating: 4.7 },
+                { name: 'CloudNine', logo: '🛩️', rating: 4.3 },
+                { name: 'JetStream', logo: '✈️', rating: 4.6 },
+                { name: 'FlyHigh', logo: '🛫', rating: 4.4 }
+            ];
+            
+            const flights = [];
+            for (let i = 0; i < 8; i++) {
+                const airline = airlines[Math.floor(Math.random() * airlines.length)];
+                const departTime = `${String(6 + i * 2).padStart(2, '0')}:${Math.random() > 0.5 ? '00' : '30'}`;
+                const duration = 2 + Math.random() * 4;
+                const arrivalHour = parseInt(departTime.split(':')[0]) + Math.floor(duration);
+                const arrivalTime = `${String(arrivalHour).padStart(2, '0')}:${Math.random() > 0.5 ? '00' : '30'}`;
+                const price = Math.floor(150 + Math.random() * 350);
+                
+                flights.push({
+                    id: `FL${1000 + i}`,
+                    airline: airline.name,
+                    logo: airline.logo,
+                    rating: airline.rating,
+                    from,
+                    to,
+                    date,
+                    departTime,
+                    arrivalTime,
+                    duration: `${Math.floor(duration)}h ${Math.floor((duration % 1) * 60)}m`,
+                    price,
+                    stops: Math.random() > 0.6 ? 1 : 0,
+                    seats: Math.floor(Math.random() * 50) + 10
+                });
+            }
+            return flights;
+        };
+
+        // Mock user bookings
+        const mockBookings = [
+            {
+                id: 'BK001',
+                flightId: 'FL1023',
+                airline: 'SkyWings',
+                from: 'New York (JFK)',
+                to: 'London (LHR)',
+                date: '2026-03-15',
+                departTime: '10:00',
+                arrivalTime: '22:00',
+                passengers: 2,
+                price: 850,
+                status: 'Confirmed',
+                bookingDate: '2026-02-10'
+            },
+            {
+                id: 'BK002',
+                flightId: 'FL1145',
+                airline: 'AeroElite',
+                from: 'Los Angeles (LAX)',
+                to: 'Tokyo (NRT)',
+                date: '2026-04-20',
+                departTime: '14:30',
+                arrivalTime: '18:45',
+                passengers: 1,
+                price: 1200,
+                status: 'Confirmed',
+                bookingDate: '2026-02-12'
+            }
+        ];
+
+        const AeroBookApp = () => {
+            const [currentPage, setCurrentPage] = useState('home');
+            const [currentView, setCurrentView] = useState('search');
+            const [searchParams, setSearchParams] = useState({
+                from: '',
+                to: '',
+                date: '',
+                passengers: 1,
+                class: 'economy'
+            });
+            const [flights, setFlights] = useState([]);
+            const [selectedFlight, setSelectedFlight] = useState(null);
+            const [bookingDetails, setBookingDetails] = useState({
+                name: '',
+                email: '',
+                phone: ''
+            });
+            const [bookingConfirmed, setBookingConfirmed] = useState(false);
+            const [userBookings, setUserBookings] = useState(mockBookings);
+            const [userProfile, setUserProfile] = useState({
+                name: 'John Doe',
+                email: 'john.doe@example.com',
+                phone: '+1 (555) 123-4567',
+                dob: '1990-01-01',
+                address: '123 Main St, New York, NY',
+                frequentFlyer: 'AF123456789'
+            });
+            const [enquiryForm, setEnquiryForm] = useState({
+                name: '',
+                email: '',
+                subject: '',
+                message: ''
+            });
+            const [enquirySubmitted, setEnquirySubmitted] = useState(false);
+            const [isLoading, setIsLoading] = useState(false);
+            const [apiError, setApiError] = useState(null);
+            const [supportTickets, setSupportTickets] = useState([]);
+            const [supportForm, setSupportForm] = useState({
+                subject: '',
+                priority: 'medium',
+                description: '',
+                bookingRef: ''
+            });
+
+            const cities = [
+                'New York (JFK)', 'London (LHR)', 'Tokyo (NRT)', 'Dubai (DXB)',
+                'Singapore (SIN)', 'Paris (CDG)', 'Los Angeles (LAX)', 'Sydney (SYD)',
+                'Hong Kong (HKG)', 'Frankfurt (FRA)', 'Toronto (YYZ)', 'Mumbai (BOM)'
+            ];
+
+            // Airport code mapping
+            const airportCodes = {
+                'New York (JFK)': 'JFK',
+                'London (LHR)': 'LHR',
+                'Tokyo (NRT)': 'NRT',
+                'Dubai (DXB)': 'DXB',
+                'Singapore (SIN)': 'SIN',
+                'Paris (CDG)': 'CDG',
+                'Los Angeles (LAX)': 'LAX',
+                'Sydney (SYD)': 'SYD',
+                'Hong Kong (HKG)': 'HKG',
+                'Frankfurt (FRA)': 'FRA',
+                'Toronto (YYZ)': 'YYZ',
+                'Mumbai (BOM)': 'BOM'
+            };
+
+            // Fetch real flights from API
+            const fetchRealFlights = async (from, to, date, passengers) => {
+                setIsLoading(true);
+                setApiError(null);
+                
+                try {
+                    const originCode = airportCodes[from];
+                    const destCode = airportCodes[to];
+                    
+                    // Using Amadeus Flight Offers Search API
+                    const response = await fetch(
+                        `https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=${originCode}&destinationLocationCode=${destCode}&departureDate=${date}&adults=${passengers}&max=10`,
+                        {
+                            headers: {
+                                'Authorization': 'Bearer YOUR_AMADEUS_ACCESS_TOKEN'
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch flights');
+                    }
+
+                    const data = await response.json();
+                    
+                    // Parse API response
+                    const parsedFlights = data.data.map((offer, index) => {
+                        const segment = offer.itineraries[0].segments[0];
+                        const price = parseFloat(offer.price.total);
+                        
+                        return {
+                            id: offer.id,
+                            airline: segment.carrierCode,
+                            logo: '✈️',
+                            rating: (4.0 + Math.random()).toFixed(1),
+                            from,
+                            to,
+                            date,
+                            departTime: segment.departure.at.split('T')[1].substring(0, 5),
+                            arrivalTime: segment.arrival.at.split('T')[1].substring(0, 5),
+                            duration: offer.itineraries[0].duration.replace('PT', '').toLowerCase(),
+                            price: Math.round(price),
+                            stops: offer.itineraries[0].segments.length - 1,
+                            seats: Math.floor(Math.random() * 50) + 10
+                        };
+                    });
+                    
+                    setFlights(parsedFlights);
+                    setIsLoading(false);
+                } catch (error) {
+                    console.error('API Error:', error);
+                    setApiError('Unable to fetch real-time flights. Showing sample data.');
+                    
+                    // Fallback to generated flights
+                    const generatedFlights = generateFlights(from, to, date);
+                    setFlights(generatedFlights);
+                    setIsLoading(false);
+                }
+            };
+
+            const handleSearch = async (e) => {
+                e.preventDefault();
+                if (!searchParams.from || !searchParams.to || !searchParams.date) {
+                    alert('Please fill in all search fields');
+                    return;
+                }
+                
+                // Try to fetch real flights first, fallback to generated
+                await fetchRealFlights(
+                    searchParams.from, 
+                    searchParams.to, 
+                    searchParams.date, 
+                    searchParams.passengers
+                );
+                
+                setCurrentView('results');
+            };
+
+            const handleFlightSelect = (flight) => {
+                setSelectedFlight(flight);
+                setCurrentView('booking');
+            };
+
+            const handleBooking = (e) => {
+                e.preventDefault();
+                if (!bookingDetails.name || !bookingDetails.email || !bookingDetails.phone) {
+                    alert('Please fill in all booking details');
+                    return;
+                }
+                
+                // Add booking to user bookings
+                const newBooking = {
+                    id: `BK${String(userBookings.length + 1).padStart(3, '0')}`,
+                    flightId: selectedFlight.id,
+                    airline: selectedFlight.airline,
+                    from: selectedFlight.from,
+                    to: selectedFlight.to,
+                    date: selectedFlight.date,
+                    departTime: selectedFlight.departTime,
+                    arrivalTime: selectedFlight.arrivalTime,
+                    passengers: searchParams.passengers,
+                    price: selectedFlight.price * searchParams.passengers,
+                    status: 'Confirmed',
+                    bookingDate: new Date().toISOString().split('T')[0]
+                };
+                setUserBookings([newBooking, ...userBookings]);
+                
+                setBookingConfirmed(true);
+                setCurrentView('confirmation');
+            };
+
+            const resetBooking = () => {
+                setCurrentPage('home');
+                setCurrentView('search');
+                setFlights([]);
+                setSelectedFlight(null);
+                setBookingDetails({ name: '', email: '', phone: '' });
+                setBookingConfirmed(false);
+                setSearchParams({ from: '', to: '', date: '', passengers: 1, class: 'economy' });
+            };
+
+            const handleEnquirySubmit = (e) => {
+                e.preventDefault();
+                if (!enquiryForm.name || !enquiryForm.email || !enquiryForm.subject || !enquiryForm.message) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                setEnquirySubmitted(true);
+                setTimeout(() => {
+                    setEnquirySubmitted(false);
+                    setEnquiryForm({ name: '', email: '', subject: '', message: '' });
+                }, 3000);
+            };
+
+            const handleProfileUpdate = (e) => {
+                e.preventDefault();
+                alert('Profile updated successfully!');
+            };
+
+            const cancelBooking = (bookingId) => {
+                if (confirm('Are you sure you want to cancel this booking?')) {
+                    setUserBookings(userBookings.map(booking => 
+                        booking.id === bookingId 
+                            ? { ...booking, status: 'Cancelled' }
+                            : booking
+                    ));
+                }
+            };
+
+            const handleSupportSubmit = (e) => {
+                e.preventDefault();
+                if (!supportForm.subject || !supportForm.description) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                const newTicket = {
+                    id: `TKT${String(supportTickets.length + 1).padStart(5, '0')}`,
+                    ...supportForm,
+                    status: 'Open',
+                    createdAt: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                setSupportTickets([newTicket, ...supportTickets]);
+                setSupportForm({ subject: '', priority: 'medium', description: '', bookingRef: '' });
+                alert('Support ticket created successfully! Ticket ID: ' + newTicket.id);
+            };
+
+            return (
+                <div className="min-h-screen gradient-bg">
+                    {/* Navigation Bar */}
+                    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div 
+                                    className="flex items-center space-x-2 cursor-pointer" 
+                                    onClick={() => { setCurrentPage('home'); setCurrentView('search'); }}
+                                >
+                                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span className="logo-text">AeroBook</span>
+                                </div>
+                                
+                                <div className="flex items-center space-x-8">
+                                    <button
+                                        onClick={() => { setCurrentPage('home'); setCurrentView('search'); }}
+                                        className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
+                                    >
+                                        Book Flights
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage('bookings')}
+                                        className={`nav-link ${currentPage === 'bookings' ? 'active' : ''}`}
+                                    >
+                                        My Bookings
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage('profile')}
+                                        className={`nav-link ${currentPage === 'profile' ? 'active' : ''}`}
+                                    >
+                                        Profile
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage('help')}
+                                        className={`nav-link ${currentPage === 'help' ? 'active' : ''}`}
+                                    >
+                                        Help
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage('enquiry')}
+                                        className={`nav-link ${currentPage === 'enquiry' ? 'active' : ''}`}
+                                    >
+                                        Contact
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-6 py-8">
+                        {/* HOME PAGE - Flight Booking */}
+                        {currentPage === 'home' && (
+                            <>
+                        {/* Search View */}
+                        {currentView === 'search' && (
+                            <div className="glass-effect rounded-lg shadow-sm p-8 fade-in">
+                                <h2 className="section-title mb-2">
+                                    Search Flights
+                                </h2>
+                                <p className="text-muted mb-8">Find and book flights to destinations worldwide</p>
+                                <form onSubmit={handleSearch} className="space-y-6">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                From
+                                            </label>
+                                            <select
+                                                value={searchParams.from}
+                                                onChange={(e) => setSearchParams({...searchParams, from: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            >
+                                                <option value="">Select departure city</option>
+                                                {cities.map(city => (
+                                                    <option key={city} value={city}>{city}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                To
+                                            </label>
+                                            <select
+                                                value={searchParams.to}
+                                                onChange={(e) => setSearchParams({...searchParams, to: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            >
+                                                <option value="">Select destination city</option>
+                                                {cities.map(city => (
+                                                    <option key={city} value={city}>{city}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Departure Date
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={searchParams.date}
+                                                onChange={(e) => setSearchParams({...searchParams, date: e.target.value})}
+                                                min={new Date().toISOString().split('T')[0]}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Passengers
+                                            </label>
+                                            <select
+                                                value={searchParams.passengers}
+                                                onChange={(e) => setSearchParams({...searchParams, passengers: parseInt(e.target.value)})}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            >
+                                                {[1,2,3,4,5,6].map(num => (
+                                                    <option key={num} value={num}>{num} {num === 1 ? 'Passenger' : 'Passengers'}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Class
+                                            </label>
+                                            <select
+                                                value={searchParams.class}
+                                                onChange={(e) => setSearchParams({...searchParams, class: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            >
+                                                <option value="economy">Economy</option>
+                                                <option value="business">Business</option>
+                                                <option value="first">First Class</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full btn-primary text-white py-4 rounded-lg font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <div className="loading-spinner mr-3"></div>
+                                                Searching Flights...
+                                            </>
+                                        ) : (
+                                            'Search Flights'
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Results View */}
+                        {currentView === 'results' && (
+                            <div className="fade-in">
+                                <div className="glass-effect rounded-lg p-6 mb-6">
+                                    <h3 className="section-title mb-2">
+                                        {searchParams.from.split(' ')[0]} → {searchParams.to.split(' ')[0]}
+                                    </h3>
+                                    <p className="text-muted text-sm">
+                                        {new Date(searchParams.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • 
+                                        {searchParams.passengers} {searchParams.passengers === 1 ? 'Passenger' : 'Passengers'} • 
+                                        {searchParams.class.charAt(0).toUpperCase() + searchParams.class.slice(1)}
+                                    </p>
+                                    {apiError && (
+                                        <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                            <p className="text-sm text-yellow-800">{apiError}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {flights.map(flight => (
+                                        <div key={flight.id} className="glass-effect rounded-lg p-6 flight-card">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center space-x-3 mb-4">
+                                                        <div>
+                                                            <h4 className="text-lg font-semibold text-gray-900">{flight.airline}</h4>
+                                                            <div className="flex items-center space-x-2 text-sm">
+                                                                <span className="text-gray-500">{flight.id}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center space-x-6">
+                                                        <div>
+                                                            <p className="text-2xl font-bold text-gray-900">{flight.departTime}</p>
+                                                            <p className="text-sm text-gray-500">{airportCodes[flight.from]}</p>
+                                                        </div>
+                                                        
+                                                        <div className="flex-1 flex flex-col items-center px-4">
+                                                            <p className="text-xs text-gray-500 mb-1">{flight.duration}</p>
+                                                            <div className="w-full h-0.5 bg-gray-300 rounded-full relative">
+                                                                <div className="absolute -top-1 left-0 w-2 h-2 bg-gray-400 rounded-full"></div>
+                                                                <div className="absolute -top-1 right-0 w-2 h-2 bg-gray-400 rounded-full"></div>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                {flight.stops === 0 ? 'Non-stop' : `${flight.stops} stop`}
+                                                            </p>
+                                                        </div>
+                                                        
+                                                        <div className="text-right">
+                                                            <p className="text-2xl font-bold text-gray-900">{flight.arrivalTime}</p>
+                                                            <p className="text-sm text-gray-500">{airportCodes[flight.to]}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="md:text-right flex flex-col items-end space-y-3 md:pl-6 md:border-l border-gray-200">
+                                                    <div>
+                                                        <p className="price-tag">${flight.price}</p>
+                                                        <p className="text-sm text-gray-500">per person</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleFlightSelect(flight)}
+                                                        className="btn-primary text-white px-6 py-2.5 rounded-lg font-semibold text-sm"
+                                                    >
+                                                        Select Flight
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Booking View */}
+                        {currentView === 'booking' && selectedFlight && (
+                            <div className="fade-in">
+                                <div className="glass-effect rounded-lg p-6 mb-6">
+                                    <h3 className="section-title mb-2">Review & Book</h3>
+                                    <div className="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-200">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-base font-semibold text-gray-900">{selectedFlight.airline}</span>
+                                            <span className="text-sm text-gray-500">{selectedFlight.id}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-3 text-gray-700 mb-2">
+                                            <span className="font-semibold text-lg">{selectedFlight.departTime}</span>
+                                            <span className="text-gray-400">→</span>
+                                            <span className="font-semibold text-lg">{selectedFlight.arrivalTime}</span>
+                                            <span className="text-sm text-gray-500">({selectedFlight.duration})</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-3">{selectedFlight.from} → {selectedFlight.to}</p>
+                                        <div className="divider"></div>
+                                        <p className="price-tag mt-3">
+                                            ${selectedFlight.price * searchParams.passengers} 
+                                            <span className="text-sm text-gray-500 ml-2 font-normal">
+                                                (${selectedFlight.price} × {searchParams.passengers})
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="glass-effect rounded-lg p-8">
+                                    <h3 className="section-title mb-6">Passenger Information</h3>
+                                    <form onSubmit={handleBooking} className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Full Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={bookingDetails.name}
+                                                onChange={(e) => setBookingDetails({...bookingDetails, name: e.target.value})}
+                                                placeholder="John Doe"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Email Address *
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={bookingDetails.email}
+                                                onChange={(e) => setBookingDetails({...bookingDetails, email: e.target.value})}
+                                                placeholder="john.doe@example.com"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Phone Number *
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={bookingDetails.phone}
+                                                onChange={(e) => setBookingDetails({...bookingDetails, phone: e.target.value})}
+                                                placeholder="+1 (555) 123-4567"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            />
+                                        </div>
+
+                                        <div className="flex space-x-4 pt-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentView('results')}
+                                                className="flex-1 btn-secondary py-3 rounded-lg font-semibold"
+                                            >
+                                                Back
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="flex-1 btn-primary text-white py-3 rounded-lg font-semibold"
+                                            >
+                                                Confirm Booking
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Confirmation View */}
+                        {currentView === 'confirmation' && selectedFlight && (
+                            <div className="glass-effect rounded-lg p-12 text-center fade-in max-w-2xl mx-auto">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <h2 className="section-title mb-3">Booking Confirmed</h2>
+                                <p className="text-muted mb-8">
+                                    Your flight has been successfully booked. A confirmation email has been sent to {bookingDetails.email}
+                                </p>
+
+                                <div className="bg-gray-50 rounded-lg p-6 text-left border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Details</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Booking Reference</span>
+                                            <span className="font-semibold text-gray-900">{selectedFlight.id}-{Math.random().toString(36).substr(2, 6).toUpperCase()}</span>
+                                        </div>
+                                        <div className="divider"></div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Passenger</span>
+                                            <span className="font-medium text-gray-900">{bookingDetails.name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Flight</span>
+                                            <span className="font-medium text-gray-900">{selectedFlight.airline} {selectedFlight.id}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Route</span>
+                                            <span className="font-medium text-gray-900">{airportCodes[selectedFlight.from]} → {airportCodes[selectedFlight.to]}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Date</span>
+                                            <span className="font-medium text-gray-900">{new Date(searchParams.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Time</span>
+                                            <span className="font-medium text-gray-900">{selectedFlight.departTime} - {selectedFlight.arrivalTime}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Class</span>
+                                            <span className="font-medium text-gray-900">{searchParams.class.charAt(0).toUpperCase() + searchParams.class.slice(1)}</span>
+                                        </div>
+                                        <div className="divider"></div>
+                                        <div className="flex justify-between items-center pt-2">
+                                            <span className="text-gray-900 font-semibold">Total Amount</span>
+                                            <span className="text-2xl font-bold text-blue-600">${selectedFlight.price * searchParams.passengers}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={resetBooking}
+                                    className="btn-primary text-white px-8 py-3 rounded-lg font-semibold mt-8"
+                                >
+                                    Book Another Flight
+                                </button>
+                            </div>
+                        )}
+                            </>
+                        )}
+
+                        {/* MY BOOKINGS PAGE */}
+                        {currentPage === 'bookings' && (
+                            <div className="fade-in">
+                                <div className="mb-8">
+                                    <h2 className="section-title mb-2">My Bookings</h2>
+                                    <p className="text-muted">View and manage your flight reservations</p>
+                                </div>
+
+                                {userBookings.length === 0 ? (
+                                    <div className="glass-effect rounded-lg p-16 text-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Yet</h3>
+                                        <p className="text-muted mb-6">Start your journey by booking your first flight</p>
+                                        <button
+                                            onClick={() => { setCurrentPage('home'); setCurrentView('search'); }}
+                                            className="btn-primary text-white px-6 py-2.5 rounded-lg font-semibold"
+                                        >
+                                            Book a Flight
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userBookings.map(booking => (
+                                            <div key={booking.id} className="glass-effect rounded-lg p-6 flight-card">
+                                                <div className="flex flex-col md:flex-row justify-between gap-6">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div>
+                                                                <h3 className="text-lg font-semibold text-gray-900">{booking.airline}</h3>
+                                                                <p className="text-sm text-gray-500">Booking ID: {booking.id} • Flight {booking.flightId}</p>
+                                                            </div>
+                                                            <span className={`status-badge px-3 py-1 rounded-full ${
+                                                                booking.status === 'Confirmed' 
+                                                                    ? 'bg-green-100 text-green-700' 
+                                                                    : 'bg-red-100 text-red-700'
+                                                            }`}>
+                                                                {booking.status}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="grid md:grid-cols-3 gap-4 mb-4 text-sm">
+                                                            <div>
+                                                                <p className="text-gray-500 mb-1">Route</p>
+                                                                <p className="font-semibold text-gray-900">{booking.from.split(' ')[0]} → {booking.to.split(' ')[0]}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-gray-500 mb-1">Date</p>
+                                                                <p className="font-semibold text-gray-900">
+                                                                    {new Date(booking.date).toLocaleDateString('en-US', { 
+                                                                        year: 'numeric', 
+                                                                        month: 'short', 
+                                                                        day: 'numeric' 
+                                                                    })}
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-gray-500 mb-1">Time</p>
+                                                                <p className="font-semibold text-gray-900">
+                                                                    {booking.departTime} - {booking.arrivalTime}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">Total Amount</p>
+                                                                <p className="text-2xl font-bold text-blue-600">${booking.price}</p>
+                                                            </div>
+                                                            {booking.status === 'Confirmed' && (
+                                                                <button
+                                                                    onClick={() => cancelBooking(booking.id)}
+                                                                    className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-red-700 transition"
+                                                                >
+                                                                    Cancel Booking
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* PROFILE PAGE */}
+                        {currentPage === 'profile' && (
+                            <div className="fade-in">
+                                <div className="mb-8">
+                                    <h2 className="section-title mb-2">Profile Settings</h2>
+                                    <p className="text-muted">Manage your personal information and preferences</p>
+                                </div>
+
+                                <div className="glass-effect rounded-lg p-8">
+                                    <form onSubmit={handleProfileUpdate} className="space-y-6">
+                                        <div className="flex items-center space-x-6 pb-6 border-b border-gray-200">
+                                            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                                {userProfile.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-semibold text-gray-900">{userProfile.name}</h3>
+                                                <p className="text-muted">{userProfile.email}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Full Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={userProfile.name}
+                                                    onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Email Address *
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={userProfile.email}
+                                                    onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Phone Number *
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    value={userProfile.phone}
+                                                    onChange={(e) => setUserProfile({...userProfile, phone: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Date of Birth
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={userProfile.dob}
+                                                    onChange={(e) => setUserProfile({...userProfile, dob: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Address
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={userProfile.address}
+                                                    onChange={(e) => setUserProfile({...userProfile, address: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Frequent Flyer Number
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={userProfile.frequentFlyer}
+                                                    onChange={(e) => setUserProfile({...userProfile, frequentFlyer: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            className="w-full btn-primary text-white py-3 rounded-lg font-semibold"
+                                        >
+                                            Save Changes
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* HELP PAGE */}
+                        {currentPage === 'help' && (
+                            <div className="fade-in">
+                                <div className="glass-effect rounded-2xl p-8 mb-6">
+                                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Help Center</h2>
+                                    <p className="text-gray-600">Find answers to your questions</p>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                                    <div className="glass-effect rounded-2xl p-6 hover:shadow-xl transition cursor-pointer">
+                                        <div className="text-4xl mb-4">📞</div>
+                                        <h3 className="text-xl font-bold text-gray-800 mb-2">Contact Support</h3>
+                                        <p className="text-gray-600 mb-3">Get in touch with our customer service team</p>
+                                        <p className="text-blue-600 font-semibold">+1 (800) 123-4567</p>
+                                        <p className="text-gray-600 text-sm">Available 24/7</p>
+                                    </div>
+
+                                    <div className="glass-effect rounded-2xl p-6 hover:shadow-xl transition cursor-pointer">
+                                        <div className="text-4xl mb-4">📧</div>
+                                        <h3 className="text-xl font-bold text-gray-800 mb-2">Email Us</h3>
+                                        <p className="text-gray-600 mb-3">Send us your questions and concerns</p>
+                                        <p className="text-blue-600 font-semibold">support@aerobook.com</p>
+                                        <p className="text-gray-600 text-sm">Response within 24 hours</p>
+                                    </div>
+                                </div>
+
+                                <div className="glass-effect rounded-2xl p-8">
+                                    <h3 className="text-2xl font-bold text-gray-800 mb-6">Frequently Asked Questions</h3>
+                                    
+                                    <div className="space-y-4">
+                                        <div className="border-b border-gray-200 pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">How do I cancel my booking?</h4>
+                                            <p className="text-gray-600">
+                                                You can cancel your booking from the "My Bookings" page. Click on the "Cancel Booking" button 
+                                                next to your reservation. Cancellation fees may apply based on the airline's policy.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-b border-gray-200 pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">What payment methods do you accept?</h4>
+                                            <p className="text-gray-600">
+                                                We accept all major credit cards (Visa, MasterCard, American Express), debit cards, 
+                                                and PayPal. All transactions are secured with 256-bit encryption.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-b border-gray-200 pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">Can I change my flight date?</h4>
+                                            <p className="text-gray-600">
+                                                Yes, flight date changes are subject to availability and airline policies. Additional 
+                                                charges may apply. Contact our support team for assistance.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-b border-gray-200 pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">How early should I arrive at the airport?</h4>
+                                            <p className="text-gray-600">
+                                                We recommend arriving at least 2 hours before domestic flights and 3 hours before 
+                                                international flights to allow time for check-in and security procedures.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-b border-gray-200 pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">What is your refund policy?</h4>
+                                            <p className="text-gray-600">
+                                                Refund policies vary by airline and ticket type. Fully refundable tickets can be 
+                                                cancelled with a full refund, while non-refundable tickets may incur cancellation fees. 
+                                                Check your booking details for specific terms.
+                                            </p>
+                                        </div>
+
+                                        <div className="pb-4">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">Can I add extra baggage to my booking?</h4>
+                                            <p className="text-gray-600">
+                                                Yes, you can purchase additional baggage allowance through our customer service or 
+                                                directly with the airline. It's usually cheaper to add baggage before your flight.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ENQUIRY PAGE */}
+                        {currentPage === 'enquiry' && (
+                            <div className="fade-in">
+                                <div className="glass-effect rounded-2xl p-8 mb-6">
+                                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Contact Us</h2>
+                                    <p className="text-gray-600">Have a question? We're here to help!</p>
+                                </div>
+
+                                <div className="glass-effect rounded-2xl p-8">
+                                    {enquirySubmitted ? (
+                                        <div className="text-center py-12">
+                                            <div className="text-6xl mb-4">✅</div>
+                                            <h3 className="text-2xl font-bold text-gray-800 mb-2">Enquiry Submitted!</h3>
+                                            <p className="text-gray-600">
+                                                Thank you for contacting us. We'll get back to you within 24 hours.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleEnquirySubmit} className="space-y-6">
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                        Your Name *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={enquiryForm.name}
+                                                        onChange={(e) => setEnquiryForm({...enquiryForm, name: e.target.value})}
+                                                        placeholder="John Doe"
+                                                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                        Email Address *
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={enquiryForm.email}
+                                                        onChange={(e) => setEnquiryForm({...enquiryForm, email: e.target.value})}
+                                                        placeholder="john.doe@example.com"
+                                                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Subject *
+                                                </label>
+                                                <select
+                                                    value={enquiryForm.subject}
+                                                    onChange={(e) => setEnquiryForm({...enquiryForm, subject: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition"
+                                                >
+                                                    <option value="">Select a subject</option>
+                                                    <option value="booking">Booking Assistance</option>
+                                                    <option value="cancellation">Cancellation Request</option>
+                                                    <option value="refund">Refund Inquiry</option>
+                                                    <option value="technical">Technical Issue</option>
+                                                    <option value="feedback">Feedback</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Message *
+                                                </label>
+                                                <textarea
+                                                    value={enquiryForm.message}
+                                                    onChange={(e) => setEnquiryForm({...enquiryForm, message: e.target.value})}
+                                                    placeholder="Please describe your inquiry in detail..."
+                                                    rows="6"
+                                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition resize-none"
+                                                ></textarea>
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                className="w-full btn-primary text-white py-4 rounded-xl font-semibold text-lg"
+                                            >
+                                                Submit Enquiry
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PRIVACY POLICY PAGE */}
+                        {currentPage === 'privacy' && (
+                            <div className="fade-in max-w-4xl mx-auto">
+                                <div className="mb-8">
+                                    <h2 className="section-title mb-2">Privacy Policy</h2>
+                                    <p className="text-muted">Last updated: February 14, 2026</p>
+                                </div>
+
+                                <div className="glass-effect rounded-lg p-8 space-y-6">
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Information We Collect</h3>
+                                        <p className="text-gray-700 mb-3">
+                                            AeroBook collects information that you provide directly to us when you create an account, 
+                                            book flights, or communicate with us. This includes:
+                                        </p>
+                                        <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                                            <li>Personal identification information (name, email address, phone number)</li>
+                                            <li>Travel details and preferences</li>
+                                            <li>Payment information (processed securely through third-party payment processors)</li>
+                                            <li>Communication history and support tickets</li>
+                                        </ul>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">2. How We Use Your Information</h3>
+                                        <p className="text-gray-700 mb-3">We use the information we collect to:</p>
+                                        <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                                            <li>Process and manage your flight bookings</li>
+                                            <li>Provide customer support and respond to your inquiries</li>
+                                            <li>Send booking confirmations and travel updates</li>
+                                            <li>Improve our services and user experience</li>
+                                            <li>Comply with legal obligations and prevent fraud</li>
+                                        </ul>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">3. Data Security</h3>
+                                        <p className="text-gray-700">
+                                            We implement industry-standard security measures to protect your personal information, 
+                                            including encryption, secure servers, and regular security audits.
+                                        </p>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">4. Contact Us</h3>
+                                        <p className="text-gray-700">
+                                            If you have questions about this Privacy Policy, please contact us at privacy@aerobook.com
+                                        </p>
+                                    </section>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TERMS OF SERVICE PAGE */}
+                        {currentPage === 'terms' && (
+                            <div className="fade-in max-w-4xl mx-auto">
+                                <div className="mb-8">
+                                    <h2 className="section-title mb-2">Terms of Service</h2>
+                                    <p className="text-muted">Last updated: February 14, 2026</p>
+                                </div>
+
+                                <div className="glass-effect rounded-lg p-8 space-y-6">
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h3>
+                                        <p className="text-gray-700">
+                                            By accessing and using AeroBook's services, you agree to be bound by these Terms of Service.
+                                        </p>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">2. Booking and Payment</h3>
+                                        <p className="text-gray-700 mb-3">
+                                            All bookings are subject to availability and confirmation. Prices displayed include base fare and applicable taxes.
+                                        </p>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">3. Cancellations and Refunds</h3>
+                                        <p className="text-gray-700">
+                                            Cancellation policies vary by airline and fare type. Refundable tickets receive full refund minus processing fees.
+                                        </p>
+                                    </section>
+
+                                    <div className="divider"></div>
+
+                                    <section>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">4. Contact Information</h3>
+                                        <p className="text-gray-700">
+                                            For questions about these Terms of Service, contact us at legal@aerobook.com
+                                        </p>
+                                    </section>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SUPPORT PAGE */}
+                        {currentPage === 'support' && (
+                            <div className="fade-in">
+                                <div className="mb-8">
+                                    <h2 className="section-title mb-2">Support Center</h2>
+                                    <p className="text-muted">Get help with your bookings and account</p>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                                    <div className="glass-effect rounded-lg p-6 text-center hover:shadow-md transition">
+                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone Support</h3>
+                                        <p className="text-muted text-sm mb-3">Talk to our support team</p>
+                                        <p className="text-blue-600 font-semibold">+1 (800) 123-4567</p>
+                                        <p className="text-xs text-gray-500 mt-1">24/7 Available</p>
+                                    </div>
+
+                                    <div className="glass-effect rounded-lg p-6 text-center hover:shadow-md transition">
+                                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
+                                        <p className="text-muted text-sm mb-3">Send us your questions</p>
+                                        <p className="text-green-600 font-semibold">support@aerobook.com</p>
+                                        <p className="text-xs text-gray-500 mt-1">Reply within 24 hours</p>
+                                    </div>
+
+                                    <div className="glass-effect rounded-lg p-6 text-center hover:shadow-md transition">
+                                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
+                                        <p className="text-muted text-sm mb-3">Instant messaging support</p>
+                                        <button className="text-purple-600 font-semibold hover:underline">Start Chat</button>
+                                        <p className="text-xs text-gray-500 mt-1">Mon-Fri, 9am-6pm EST</p>
+                                    </div>
+                                </div>
+
+                                <div className="glass-effect rounded-lg p-8">
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Create Support Ticket</h3>
+                                    <form onSubmit={handleSupportSubmit} className="space-y-6">
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Subject *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={supportForm.subject}
+                                                    onChange={(e) => setSupportForm({...supportForm, subject: e.target.value})}
+                                                    placeholder="Brief description of your issue"
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                    Priority
+                                                </label>
+                                                <select
+                                                    value={supportForm.priority}
+                                                    onChange={(e) => setSupportForm({...supportForm, priority: e.target.value})}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                                >
+                                                    <option value="low">Low</option>
+                                                    <option value="medium">Medium</option>
+                                                    <option value="high">High</option>
+                                                    <option value="urgent">Urgent</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Booking Reference (Optional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={supportForm.bookingRef}
+                                                onChange={(e) => setSupportForm({...supportForm, bookingRef: e.target.value})}
+                                                placeholder="e.g., BK001"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition bg-white"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Description *
+                                            </label>
+                                            <textarea
+                                                value={supportForm.description}
+                                                onChange={(e) => setSupportForm({...supportForm, description: e.target.value})}
+                                                placeholder="Please provide detailed information about your issue..."
+                                                rows="6"
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-600 transition resize-none bg-white"
+                                            ></textarea>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            className="w-full btn-primary text-white py-3 rounded-lg font-semibold"
+                                        >
+                                            Submit Ticket
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {supportTickets.length > 0 && (
+                                    <div className="mt-8">
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Support Tickets</h3>
+                                        <div className="space-y-4">
+                                            {supportTickets.map(ticket => (
+                                                <div key={ticket.id} className="glass-effect rounded-lg p-6">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="flex items-center space-x-3">
+                                                            <span className="text-sm font-semibold text-gray-900">{ticket.id}</span>
+                                                            <span className={`status-badge px-2 py-1 rounded text-xs ${
+                                                                ticket.status === 'Open' ? 'bg-blue-100 text-blue-700' :
+                                                                ticket.status === 'In Progress' ? 'bg-yellow-100 text-yellow-700' :
+                                                                'bg-green-100 text-green-700'
+                                                            }`}>
+                                                                {ticket.status}
+                                                            </span>
+                                                            <span className={`status-badge px-2 py-1 rounded text-xs ${
+                                                                ticket.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                                                ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                                                'bg-gray-100 text-gray-700'
+                                                            }`}>
+                                                                {ticket.priority}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm text-gray-500">
+                                                            {new Date(ticket.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="font-semibold text-gray-900 mb-2">{ticket.subject}</h4>
+                                                    <p className="text-sm text-gray-600">{ticket.description}</p>
+                                                    {ticket.bookingRef && (
+                                                        <p className="text-xs text-gray-500 mt-2">Booking Ref: {ticket.bookingRef}</p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-white border-t border-gray-200 mt-16">
+                        <div className="max-w-7xl mx-auto px-6 py-8">
+                            <div className="flex flex-col md:flex-row justify-between items-center">
+                                <p className="text-sm text-gray-600">© 2026 AeroBook. All rights reserved.</p>
+                                <div className="flex space-x-6 mt-4 md:mt-0">
+                                    <button 
+                                        onClick={() => setCurrentPage('privacy')}
+                                        className="text-sm text-gray-600 hover:text-blue-600 transition"
+                                    >
+                                        Privacy Policy
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentPage('terms')}
+                                        className="text-sm text-gray-600 hover:text-blue-600 transition"
+                                    >
+                                        Terms of Service
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentPage('support')}
+                                        className="text-sm text-gray-600 hover:text-blue-600 transition"
+                                    >
+                                        Support
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<AeroBookApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>

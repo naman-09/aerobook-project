@@ -251,10 +251,6 @@ python manage.py db upgrade
 **Issue**: API not responding
 **Solution**: Check if backend server is running on port 5000
 
-## 📄 License
-
-This project is created for educational purposes.
-
 ## 👥 Contributors
 
 - Project created as a full-stack demonstration
